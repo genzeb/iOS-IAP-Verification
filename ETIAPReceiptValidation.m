@@ -33,6 +33,11 @@
 @interface NSDictionary (ETIAPReceipt) <ETIAPReceipt>
 @end
 
+// The following is only needed if you are on pre-iOS 7
+@interface NSData (Base64Encoding)
+- (NSString*)base64forData:(NSData*)theData;
+@end
+
 @implementation NSDictionary (ETIAPReceipt)
 - (NSInteger)status
 {
@@ -121,7 +126,7 @@ static const NSInteger kETIAPReceiptSandboxError = 21008;
     
     NSString *receiptString = nil;
     
-    if (IS_IOS7_OR_LATER()) {
+    if (UIDevice.currentDevice.systemVersion.floatValue >= 7.0) {
         receiptString = [receiptData base64EncodedStringWithOptions:0];
     } else {
         receiptString = [receiptData base64EncodedString];
@@ -178,4 +183,33 @@ static const NSInteger kETIAPReceiptSandboxError = 21008;
                            }];
 }
 
+@end
+
+@implementation NSData (Base64Encoding)
+// from http://stackoverflow.com/questions/2197362/converting-nsdata-to-base64
+- (NSString*)base64forData:(NSData*)theData {
+    const uint8_t* input = (const uint8_t*)[theData bytes];
+    NSInteger length = [theData length];
+    static char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    NSMutableData* data = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
+    uint8_t* output = (uint8_t*)data.mutableBytes;
+    NSInteger i;
+    for (i=0; i < length; i += 3) {
+        NSInteger value = 0;
+        NSInteger j;
+        for (j = i; j < (i + 3); j++) {
+            value <<= 8;
+
+            if (j < length) {
+                value |= (0xFF & input[j]);
+            }
+        }
+        NSInteger theIndex = (i / 3) * 4;
+        output[theIndex + 0] =                    table[(value >> 18) & 0x3F];
+        output[theIndex + 1] =                    table[(value >> 12) & 0x3F];
+        output[theIndex + 2] = (i + 1) < length ? table[(value >> 6)  & 0x3F] : '=';
+        output[theIndex + 3] = (i + 2) < length ? table[(value >> 0)  & 0x3F] : '=';
+    }
+    return [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+}
 @end
