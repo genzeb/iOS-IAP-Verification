@@ -28,6 +28,8 @@
 #import "ETIAPReceiptValidation.h"
 #import "NSData+PMBase64.h"
 
+#define BLOCK_SAFE_RUN(block, ...) block ? block(__VA_ARGS__) : nil
+
 @interface NSDictionary (ETIAPReceipt) <ETIAPReceipt>
 @end
 
